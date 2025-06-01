@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin – Erweiterte Verwaltung</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1000px; margin: auto; padding: 20px; }
+    input, textarea { width: 100%; padding: 6px; margin: 5px 0; }
+    .hidden { display: none; }
+    .section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; }
+    .user { padding: 5px; border-bottom: 1px solid #ddd; }
+    button { margin-top: 10px; padding: 6px 12px; }
+  </style>
+</head>
+<body>
+
+  <h1>Admin – Erweiterte Verwaltung</h1>
+
+  <div id="login" class="hidden">
+    <p>🔐 Passwort eingeben:</p>
+    <input type="password" id="admin-pass" placeholder="Admin123">
+    <button onclick="checkLogin()">Anmelden</button>
+    <p id="login-error" style="color:red;"></p>
+  </div>
+
+  <div id="admin-panel" class="hidden">
+    <button onclick="logout()">🚪 Abmelden</button>
+
+    <div class="section">
+      <h3>📋 Angemeldete Nutzer</h3>
+      <div id="user-list"></div>
+      <button onclick="clearUsers()">Alle Nutzer löschen</button>
+    </div>
+
+    <div class="section">
+      <h3>🔔 Testbenachrichtigung</h3>
+      <button onclick="testNotification()">Test senden</button>
+      <p>⚠️ Für echte Push-Nachrichten wird später ein Server oder Telegram-Bot nötig sein.</p>
+    </div>
+  </div>
+
+  <script>
+    const PASSWORD = "Admin123";
+
+    function checkLogin() {
+      const pass = document.getElementById("admin-pass").value;
+      if (pass === PASSWORD) {
+        localStorage.setItem("adminLoggedIn", "true");
+        addUser();
+        showAdminPanel();
+      } else {
+        document.getElementById("login-error").textContent = "❌ Falsches Passwort!";
+      }
+    }
+
+    function showAdminPanel() {
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("admin-panel").classList.remove("hidden");
+      loadUsers();
+    }
+
+    function logout() {
+      localStorage.removeItem("adminLoggedIn");
+      document.getElementById("admin-panel").classList.add("hidden");
+      document.getElementById("login").classList.remove("hidden");
+    }
+
+    function addUser() {
+      const users = JSON.parse(localStorage.getItem("adminUsers") || "[]");
+      const now = new Date().toLocaleString();
+      users.push({ login: now });
+      localStorage.setItem("adminUsers", JSON.stringify(users));
+    }
+
+    function loadUsers() {
+      const list = document.getElementById("user-list");
+      list.innerHTML = "";
+      const users = JSON.parse(localStorage.getItem("adminUsers") || "[]");
+      if (users.length === 0) {
+        list.innerHTML = "<p>Keine Nutzer angemeldet.</p>";
+        return;
+      }
+      users.forEach((u, i) => {
+        const div = document.createElement("div");
+        div.className = "user";
+        div.innerHTML = `Nutzer ${i + 1}: ${u.login} <button onclick="deleteUser(${i})">Löschen</button>`;
+        list.appendChild(div);
+      });
+    }
+
+    function deleteUser(index) {
+      const users = JSON.parse(localStorage.getItem("adminUsers") || "[]");
+      users.splice(index, 1);
+      localStorage.setItem("adminUsers", JSON.stringify(users));
+      loadUsers();
+    }
+
+    function clearUsers() {
+      localStorage.removeItem("adminUsers");
+      loadUsers();
+    }
+
+    function testNotification() {
+      if ("Notification" in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            new Notification("📦 Neue Bestellung eingegangen!");
+          } else {
+            alert("⚠️ Benachrichtigung nicht erlaubt.");
+          }
+        });
+      } else {
+        alert("Browser unterstützt keine Benachrichtigungen.");
+      }
+    }
+
+    // Automatischer Login wenn bereits eingeloggt
+    if (localStorage.getItem("adminLoggedIn") === "true") {
+      showAdminPanel();
+    } else {
+      document.getElementById("login").classList.remove("hidden");
+    }
+  </script>
+
+</body>
+</html>

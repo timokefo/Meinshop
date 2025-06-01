@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Mein Shop</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 20px; }
+        .product { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .product input { width: 60px; }
+        .cart-summary, .order-form { margin-top: 30px; }
+        .cart-summary div, .order-form div { margin: 5px 0; }
+        button { padding: 10px 20px; font-size: 1rem; cursor: pointer; }
+        .notice { margin-top: 15px; color: red; }
+        .admin-link { margin-top: 40px; text-align: right; }
+        .admin-link a { text-decoration: none; color: #333; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Willkommen im Shop</h1>
+    <p>Wähle deine Produkte und sende deine Bestellung ab. Für Uhrzeit bitte selbstständig kontaktieren.</p>
+
+    <div id="product-list"></div>
+
+    <div class="cart-summary">
+        <h3>Warenkorb</h3>
+        <div id="cart-output">Noch nichts im Warenkorb.</div>
+        <div><strong>Gesamt:</strong> <span id="total-price">0 €</span></div>
+    </div>
+
+    <div class="order-form">
+        <h3>Bestellung absenden</h3>
+        <div>
+            <label for="customer-name">Dein Name:</label><br>
+            <input type="text" id="customer-name" placeholder="Name eingeben" style="width: 100%; max-width: 300px;">
+        </div>
+        <button onclick="submitOrder()">Jetzt bestellen</button>
+        <div class="notice" id="order-message"></div>
+    </div>
+
+    <div class="admin-link">
+        <a href="admin.html">🔒 Zum Adminbereich</a>
+    </div>
+
+    <script>
+        const products = [
+            "Dragonfruit Ice", "Blueberry Kiwi", "Blueberry on Ice", "Dr. Blue",
+            "Love 66", "Cherry Berry", "Blueberry Cherry Cranberry", "Grape Mint",
+            "Strawberry Ice", "Watermelon Bubblegum", "Lush Ice", "Bluesour Raspberry", "Cherry Cola"
+        ];
+
+        const productList = document.getElementById("product-list");
+        const cartOutput = document.getElementById("cart-output");
+        const totalPrice = document.getElementById("total-price");
+
+        function renderProducts() {
+            products.forEach(name => {
+                const item = document.createElement("div");
+                item.className = "product";
+                item.innerHTML = `
+                    <div><strong>${name}</strong><br>Stückpreis: 12 € (ab 2 Stück: 10 €)</div>
+                    <input type="number" min="0" value="0" data-name="${name}" onchange="updateCart()">
+                `;
+                productList.appendChild(item);
+            });
+        }
+
+        function updateCart() {
+            const inputs = document.querySelectorAll(".product input");
+            let output = "";
+            let total = 0;
+
+            inputs.forEach(input => {
+                const qty = parseInt(input.value) || 0;
+                if (qty > 0) {
+                    const name = input.dataset.name;
+                    const pricePerItem = qty >= 2 ? 10 : 12;
+                    const subtotal = qty * pricePerItem;
+                    total += subtotal;
+                    output += `${name} – ${qty} × ${pricePerItem} € = ${subtotal} €<br>`;
+                }
+            });
+
+            cartOutput.innerHTML = output || "Noch nichts im Warenkorb.";
+            totalPrice.textContent = total + " €";
+        }
+
+        function submitOrder() {
+            const name = document.getElementById("customer-name").value.trim();
+            if (!name) {
+                document.getElementById("order-message").textContent = "Bitte gib deinen Namen ein.";
+                return;
+            }
+
+            const inputs = document.querySelectorAll(".product input");
+            let orderItems = [];
+            inputs.forEach(input => {
+                const qty = parseInt(input.value) || 0;
+                if (qty > 0) {
+                    orderItems.push(`${input.dataset.name} (${qty})`);
+                }
+            });
+
+            if (orderItems.length === 0) {
+                document.getElementById("order-message").textContent = "Bitte wähle mindestens ein Produkt.";
+                return;
+            }
+
+            // Bestellung speichern
+            const newOrder = { name: name, items: orderItems, done: false };
+            const existing = JSON.parse(localStorage.getItem("adminOrders") || "[]");
+            existing.push(newOrder);
+            localStorage.setItem("adminOrders", JSON.stringify(existing));
+
+            document.getElementById("order-message").textContent = `Vielen Dank, ${name}! Deine Bestellung wurde gespeichert. Für Uhrzeit bitte selbstständig kontaktieren.`;
+
+            // Formular zurücksetzen
+            inputs.forEach(i => i.value = 0);
+            updateCart();
+        }
+
+        renderProducts();
+    </script>
+
+</body>
+</html>
